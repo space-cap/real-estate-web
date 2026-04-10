@@ -1,65 +1,89 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+
+// API 데이터 구조 정의
+interface RankingData {
+  REGION_NAME: string;
+  INDEX_VALUE: number;
+}
+
+export default function Dashboard() {
+  const [data, setData] = useState<RankingData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // 백엔드 FastAPI 서버에서 2026년 3월 TOP 5 데이터를 가져옵니다.
+        const response = await axios.get("http://127.0.0.1:8000/api/ranking?target_month=202603&limit=5");
+        setData(response.data.data);
+      } catch (error) {
+        console.error("데이터 호출 에러:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-slate-50 p-8 font-sans text-slate-900">
+      <div className="max-w-4xl mx-auto">
+
+        {/* 상단 타이틀 섹션 */}
+        <header className="mb-10 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight text-indigo-600 mb-2">
+            PRO 부동산 대시보드
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+          <p className="text-slate-500 text-lg">전국 아파트 매매가격지수 TOP 5 지역 (2026년 03월)</p>
+        </header>
+
+        {/* 메인 콘텐츠 카드 */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 border border-slate-100">
+          {loading ? (
+            <div className="h-80 flex items-center justify-center text-indigo-400 font-bold animate-pulse">
+              FastAPI 서버에서 데이터를 가져오는 중... 🚀
+            </div>
+          ) : (
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} layout="vertical" margin={{ top: 20, right: 60, left: 40, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" domain={[100, 'dataMax + 10']} hide />
+                  <YAxis
+                    dataKey="REGION_NAME"
+                    type="category"
+                    tick={{ fill: '#475569', fontSize: 14, fontWeight: 600 }}
+                    width={100}
+                  />
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar
+                    dataKey="INDEX_VALUE"
+                    radius={[0, 10, 10, 0]}
+                    barSize={45}
+                    label={{ position: 'right', fill: '#6366f1', fontWeight: 800, fontSize: 16 }}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#4f46e5' : '#818cf8'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {/* 하단 정보 섹션 */}
+        <footer className="mt-8 text-center text-slate-400 text-sm">
+          Oracle Cloud ADB + FastAPI + Next.js Stack
+        </footer>
+      </div>
     </div>
   );
 }
